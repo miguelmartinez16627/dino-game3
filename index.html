@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrome Dino Game</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#eaeaea;">
+    <div id="score-bar" style="margin-bottom:16px;position:static;left:auto;top:auto;transform:none;box-shadow:0 2px 8px #0002;">
+        Puntuación: <span id="score">0</span>
+    </div>
+    <div id="game-container"></div>
+    <script src="main.js"></script>
+    <script>
+        const scoreSpan = document.getElementById('score');
+        let score = 0;
+        let scoreInterval;
+
+        function startScore() {
+            score = 0;
+            scoreSpan.textContent = score;
+            if (scoreInterval) clearInterval(scoreInterval);
+            scoreInterval = setInterval(() => {
+                score++;
+                scoreSpan.textContent = score;
+            }, 100);
+        }
+
+        // Nuevo código para el high score
+        const highScoreSpan = document.createElement('span');
+        highScoreSpan.id = 'high-score';
+        highScoreSpan.style.marginLeft = '24px';
+        highScoreSpan.textContent = 'Mejor puntuación: ' + (localStorage.getItem('dinoHighScore') || 0);
+        document.getElementById('score-bar').appendChild(highScoreSpan);
+
+        let highScore = parseInt(localStorage.getItem('dinoHighScore')) || 0;
+
+        // Modifica stopScore para guardar la mejor puntuación
+        function stopScore() {
+            clearInterval(scoreInterval);
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('dinoHighScore', highScore);
+                highScoreSpan.textContent = 'Mejor puntuación: ' + highScore;
+            }
+        }
+
+        const gameContainer = document.getElementById('game-container');
+        gameContainer.style.position = 'relative';
+        gameContainer.style.width = '600px';
+        gameContainer.style.height = '200px';
+        gameContainer.style.background = '#f7f7f7';
+        gameContainer.style.overflow = 'hidden';
+
+        // Dino
+        const dino = document.createElement('div');
+        dino.style.position = 'absolute';
+        dino.style.left = '50px';
+        dino.style.bottom = '0px';
+        dino.style.width = '40px';
+        dino.style.height = '40px';
+        dino.style.background = 'transparent';
+        dino.style.display = 'flex';
+        dino.style.alignItems = 'center';
+        dino.style.justifyContent = 'center';
+        dino.style.fontSize = '24px';
+        dino.style.color = 'black';
+        dino.style.fontWeight = 'bold';
+        dino.textContent = '🦖';
+        // Haz que el dinosaurio mire hacia la derecha (hacia los obstáculos)
+        dino.style.transform = 'scaleX(-1)';
+        gameContainer.appendChild(dino);
+
+        let isJumping = false;
+        let dinoY = 0;
+
+        function jump() {
+            if (isJumping) return;
+            isJumping = true;
+            let upInterval = setInterval(() => {
+                if (dinoY >= 80) {
+                    clearInterval(upInterval);
+                    let downInterval = setInterval(() => {
+                        if (dinoY <= 0) {
+                            clearInterval(downInterval);
+                            isJumping = false;
+                        } else {
+                            dinoY -= 5;
+                            dino.style.bottom = dinoY + 'px';
+                        }
+                    }, 20);
+                } else {
+                    dinoY += 5;
+                    dino.style.bottom = dinoY + 'px';
+                }
+            }, 20);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.key === ' ') jump();
+        });
+
+        let gameOver = false;
+
+        // Obstacle
+        function createObstacle() {
+            const obstacle = document.createElement('div');
+            obstacle.style.position = 'absolute';
+            obstacle.style.right = '0px';
+            obstacle.style.bottom = '0px';
+            obstacle.style.width = '30px';
+            obstacle.style.height = '40px';
+            obstacle.style.display = 'flex';
+            obstacle.style.alignItems = 'flex-end';
+            obstacle.style.justifyContent = 'center';
+            obstacle.style.fontSize = '2rem';
+            obstacle.textContent = '🌵';
+            gameContainer.appendChild(obstacle);
+
+            let obstacleX = 600;
+
+            // Calcula la velocidad según la puntuación (mínimo 5, máximo 20)
+            function getSpeed() {
+                return Math.min(5 + Math.floor(score / 50), 20);
+            }
+
+            let moveInterval = setInterval(() => {
+                if (gameOver) {
+                    clearInterval(moveInterval);
+                    return;
+                }
+                if (obstacleX < -30) {
+                    clearInterval(moveInterval);
+                    gameContainer.removeChild(obstacle);
+                } else {
+                    obstacleX -= getSpeed();
+                    obstacle.style.right = (600 - obstacleX) + 'px';
+
+                    // Collision detection
+                    const dinoRect = dino.getBoundingClientRect();
+                    const obsRect = obstacle.getBoundingClientRect();
+
+                    // Ajusta la hitbox del cactus (reduce 6px de cada lado)
+                    const hitbox = {
+                        left: obsRect.left + 6,
+                        right: obsRect.right - 6,
+                        top: obsRect.top + 6,
+                        bottom: obsRect.bottom - 6
+                    };
+
+                    if (
+                        dinoRect.right > hitbox.left &&
+                        dinoRect.left < hitbox.right &&
+                        dinoRect.bottom > hitbox.top &&
+                        dinoRect.top < hitbox.bottom
+                    ) {
+                        // Mostrar mensaje de "Has perdido"
+                        const gameOverMsg = document.createElement('div');
+                        gameOverMsg.textContent = 'Has perdido';
+                        gameOverMsg.style.position = 'absolute';
+                        gameOverMsg.style.top = '50%';
+                        gameOverMsg.style.left = '50%';
+                        gameOverMsg.style.transform = 'translate(-50%, -50%)';
+                        gameOverMsg.style.background = 'rgba(0,0,0,0.7)';
+                        gameOverMsg.style.color = 'white';
+                        gameOverMsg.style.padding = '20px 40px';
+                        gameOverMsg.style.fontSize = '2rem';
+                        gameOverMsg.style.borderRadius = '10px';
+                        gameOverMsg.style.zIndex = '10';
+                        gameContainer.appendChild(gameOverMsg);
+
+                        gameOver = true;
+                        clearInterval(moveInterval);
+                        stopScore();
+                        setTimeout(() => location.reload(), 1500);
+                    }
+                }
+            }, 20);
+        }
+
+        function spawnObstacle() {
+            if (gameOver) return;
+            createObstacle();
+            // Distancia aleatoria entre 1.2s y 2.2s (1200ms a 2200ms)
+            const nextTime = Math.random() * 1000 + 1200;
+            setTimeout(spawnObstacle, nextTime);
+        }
+        spawnObstacle();
+
+        startScore();
+    </script>
+    <a href="#" onclick="location.reload()" style="display:inline-block;margin:20px 0 0 0;text-align:center;font-size:1.2rem;font-weight:bold;background:#4caf50;color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;box-shadow:0 2px 8px #0002;">¡Jugar Dino Game!</a>
+</body>
+</html>
