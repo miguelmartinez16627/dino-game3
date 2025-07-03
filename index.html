@@ -173,7 +173,8 @@
                         gameOver = true;
                         clearInterval(moveInterval);
                         stopScore();
-                        setTimeout(() => location.reload(), 1500);
+                        // Elimina o comenta la línea de reinicio automático:
+                        // setTimeout(() => location.reload(), 1500);
                     }
                 }
             }, 20);
