@@ -75,12 +75,9 @@
 
         let isJumping = false;
         let dinoY = 0;
-        let jumpCount = 0; // Para salto doble
 
         function jump() {
-            // Permite hasta 2 saltos seguidos (doble salto)
-            if (jumpCount >= 2) return;
-            jumpCount++;
+            if (isJumping) return;
             isJumping = true;
 
             let jumpHeight = 80;
@@ -91,8 +88,7 @@
                         if (dinoY <= 0) {
                             clearInterval(downInterval);
                             dinoY = 0;
-                            isJumping = false;
-                            jumpCount = 0; // Reinicia el contador al tocar el suelo
+                            isJumping = false; // Permite saltar de nuevo solo al tocar el suelo
                         } else {
                             dinoY -= 5;
                             dino.style.bottom = dinoY + 'px';
@@ -200,37 +196,8 @@
         let hasFlown = false; // Nuevo: para controlar si ya voló
 
         function checkFlyAway() {
-            if (!hasFlown && score >= 200) {
-                hasFlown = true;
-                // Animar al dino volando hacia arriba
-                let flyY = dinoY;
-                let flyInterval = setInterval(() => {
-                    flyY += 10;
-                    dino.style.bottom = flyY + 'px';
-                    if (flyY > 300) {
-                        clearInterval(flyInterval);
-                    }
-                }, 16);
-
-                // Mostrar mensaje en pantalla
-                const flyMsg = document.createElement('div');
-                flyMsg.textContent = 'janktony mrk';
-                flyMsg.style.position = 'absolute';
-                flyMsg.style.top = '50%';
-                flyMsg.style.left = '50%';
-                flyMsg.style.transform = 'translate(-50%, -50%)';
-                flyMsg.style.background = 'rgba(0,0,0,0.7)';
-                flyMsg.style.color = 'white';
-                flyMsg.style.padding = '20px 40px';
-                flyMsg.style.fontSize = '2rem';
-                flyMsg.style.borderRadius = '10px';
-                flyMsg.style.zIndex = '20';
-                gameContainer.appendChild(flyMsg);
-
-                // Detener obstáculos y puntuación
-                gameOver = true;
-                stopScore();
-            }
+            // Ya no mostrar ningún mensaje ni animación al llegar a 200 puntos
+            // Puedes dejar la función vacía o eliminar su contenido
         }
 
         startScore();
